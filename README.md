@@ -38,6 +38,12 @@ To add the queries, create query files named `tabstop.scm` in the query folder.
 (`~/.config/nvim/queries/<language>`). Read `:help treesitter-query` for more
 information.
 
+
+There is a fallback to use a `highlights.scm` in case you have no `tabstop.scm`
+file for a given language. In this case it will use the `@string`, `@number`,
+`@boolean` and `@variable.parameter` captures as potential tabstop.
+
+
 ## Query examples
 
 Here are a few examples to give you some inspiration.

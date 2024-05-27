@@ -45,24 +45,41 @@ function M.paste(reg, opts)
     source = table.concat(lines, "\n")
   end
 
-  local parser = vim.treesitter.get_string_parser(source, vim.bo.filetype)
+  local lang = vim.treesitter.language.get_lang(vim.bo.filetype) or vim.bo.filetype
+  local parser = vim.treesitter.get_string_parser(source, lang)
   local trees = parser:parse()
   local root = trees[1]:root()
   if not root then
     return
   end
-  local query = (
-    opts.querytext
-    and vim.treesitter.query.parse(parser:lang(), opts.querytext)
-    or vim.treesitter.query.get(parser:lang(), "tabstop")
-  )
-  assert(query, "Must have a tabstop query file")
+  local query
+  local istabstop = function(capture)
+    return capture == "tabstop"
+  end
+  if opts.querytext then
+    query = vim.treesitter.query.parse(lang, opts.querytext)
+  else
+    query = vim.treesitter.query.get(lang, "tabstop")
+    if not query then
+      query = vim.treesitter.query.get(lang, "highlights")
+      if query then
+        local msg = "No tabstop file found, using highlights as fallback. language=" .. lang
+        vim.notify_once(msg, vim.log.levels.INFO)
+        istabstop = function(capture)
+          return vim.tbl_contains({"string", "number", "boolean", "variable.parameter"}, capture)
+        end
+      end
+    end
+  end
+  if not query then
+    error("Must have a tabstop query file for language: " .. lang)
+  end
 
   ---@type table<integer, TSNode>
   local leafs = {}
   local nodes = {}
   for id, node, _, _ in query:iter_captures(root, source) do
-    if query.captures[id] == "tabstop" then
+    if istabstop(query.captures[id]) then
       leafs[node:id()] = node
       table.insert(nodes, node)
     end
