@@ -11,7 +11,7 @@ local api = vim.api
 ---@param opts snippasta.paste.Opts?
 function M.paste(reg, opts)
   opts = opts or {}
-  local source = vim.fn.getreg(reg or "")
+  local source = string.rep(vim.fn.getreg(reg or ""), vim.v.count1)
   local regtype = vim.fn.getregtype(reg or "")
   local mode = api.nvim_get_mode()
 
